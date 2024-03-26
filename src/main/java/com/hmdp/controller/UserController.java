@@ -81,6 +81,8 @@ public class UserController {
         不同的用户访问Controller，都有独立线程，都有自己的用户信息，互相不干扰
         到了Controller再从ThreadLocal取出用户
          */
+
+        // session是Tomcat的内存空间, 这里面存的信息越多对整个服务来讲压力就越大
         UserDTO user = UserHolder.getUser();
         return Result.ok(user);
     }

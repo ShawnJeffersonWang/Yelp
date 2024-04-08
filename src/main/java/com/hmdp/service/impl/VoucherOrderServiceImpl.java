@@ -8,9 +8,11 @@ import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.SimpleRedisLock;
 import com.hmdp.utils.UserHolder;
 import jakarta.annotation.Resource;
 import org.springframework.aop.framework.AopContext;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,9 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     @Resource
     private RedisIdWorker redisIdWorker;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     // 订单新增和库存扣减涉及到两张表的操作，这种情况最好加上事务
     @Override
@@ -55,15 +60,32 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         // 加锁的对象是userId，所以需要在外面获取用户id, 然后上锁
         // 函数执行完，说明新的订单一定是写入数据库了，因为事务提交了，事务提交完再来释放锁
         Long userId = UserHolder.getUser().getId();
-        synchronized (userId.toString().intern()) {
-            // 这里这个this指向的是当前的VoucherOrderServiceImpl对象, 而不是他的代理对象
-            // 事务要想生效其实是因为Spring对当前这个VoucherOrderServiceImpl类做了动态代理，拿到了他的代理对象
-            // 用它来做事务处理，而现在这个this指向的是非代理对象，也就是目标对象，是没有事务功能的
-            // 是Spring失效的几种可能性之一
-
-            // 获取代理对象(事务)，就是IVoucherOrderService这个接口
+//        synchronized (userId.toString().intern()) {
+//            // 这里这个this指向的是当前的VoucherOrderServiceImpl对象, 而不是他的代理对象
+//            // 事务要想生效其实是因为Spring对当前这个VoucherOrderServiceImpl类做了动态代理，拿到了他的代理对象
+//            // 用它来做事务处理，而现在这个this指向的是非代理对象，也就是目标对象，是没有事务功能的
+//            // 是Spring失效的几种可能性之一
+//
+//            // 获取代理对象(事务)，就是IVoucherOrderService这个接口
+//            IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
+//            return proxy.createVoucherOrder(voucherId);
+//        }
+        // 相比synchronized会复杂，因为要手动创建锁释放锁
+        // 创建锁对象
+        SimpleRedisLock lock = new SimpleRedisLock("order:" + userId, stringRedisTemplate);
+        // 获取锁
+        boolean isLock = lock.tryLock(1200L);
+        // 判断是否获取锁成功
+        if (!isLock) {
+            // 获取锁失败，返回错误或重试
+            return Result.fail("不允许重复下单");
+        }
+        try {
             IVoucherOrderService proxy = (IVoucherOrderService) AopContext.currentProxy();
             return proxy.createVoucherOrder(voucherId);
+        } finally {
+            // 释放锁
+            lock.unlock();
         }
     }
 

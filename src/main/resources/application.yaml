@@ -11,8 +11,8 @@ spring:
   data:
     redis:
       host: 127.0.0.1
-      port: 36379
-      password: G62m50oigInC30sf
+      port: 6379
+      password: shawn1234
       lettuce:
         pool:
           max-active: 10

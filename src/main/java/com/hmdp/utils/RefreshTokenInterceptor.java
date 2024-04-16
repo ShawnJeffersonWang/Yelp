@@ -18,7 +18,7 @@ public class RefreshTokenInterceptor implements HandlerInterceptor {
     // 因为LoginInterceptor这个类他的对象是我们自己手动new出来的，不是通过Component等等注解来构建的
     // 也就是说这个类的对象不是由Spring创建的, 是我们手动创建的，由Spring创建的对象能帮我们做依赖注入，比如加Autowired
     // 但是自动手动创建的对象没有人帮我们做依赖注入，利用构造函数来注入，谁来注入，就看是谁用了它
-    private StringRedisTemplate stringRedisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     public RefreshTokenInterceptor(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;

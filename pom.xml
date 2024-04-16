@@ -20,6 +20,27 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+            <!--SpringDataRedis的2.3.9版本并不支持Redis6.2提供的GEOSEARCH命令，因此我们需要提示其版本-->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.data</groupId>
+                    <artifactId>spring-data-redis</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>lettuce-core</groupId>
+                    <artifactId>io.lettuce</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+            <version>3.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
+            <version>6.3.2.RELEASE</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -69,7 +90,7 @@
         <dependency>
             <groupId>org.redisson</groupId>
             <artifactId>redisson</artifactId>
-            <version>3.27.2</version>
+            <version>3.28.0</version>
         </dependency>
     </dependencies>
 
